@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Value Selection Form</title>
+    <!-- CSS for Bootstrap 5 -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container py-5">
+        <div class="mb-4">
+            <h1>This page is not being used at the moment</h1>
+            <h2>Select the namespace</h2>
+        </div>
+        <form method="POST" action="{% url 'modify_data' %}" enctype="multipart/form-data" class="mb-4">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="value" class="form-label">Choose a namespace:</label>
+                <select id="value" name="value" class="form-select">
+                    {% for option in value_list %}
+                        <option value="{{ option }}">{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="customFile" class="form-label">Drop data file here or</label>
+                <input type="file" class="form-control" id="customFile" name="csv_file" required accept=".csv">
+            </div>
+            <button type="submit" class="btn btn-primary">Update Data</button>
+        </form>
+    </div>
+
+    <!-- JS for Bootstrap 5 -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+{% endblock %}

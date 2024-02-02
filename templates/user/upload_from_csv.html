@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="header text-center">
+        <h1 class="display-4">Add content via a table</h1>
+    </div>
+
+    <br>
+    <p class="mb-3"><b>Explainer: </b>If you have already split your text into segments you can upload it via a CSV file. One column should contain rows with your segments of text. The other columns can contain metadata about the whole data set or individual segments.</p>
+
+    <form id="example-form1" action="{% url 'upload_from_csv' %}" method="post" enctype="multipart/form-data" class="py-4" onsubmit="onFormSubmit();">{% csrf_token %}
+        <div class="mb-4">
+            <label for="customFile" class="form-label"><b>Step 1. </b>Drag and drop a CSV file onto this page or select a file by browsing your folders.</label>
+            <input type="file" class="form-control" id="customFile" name="csv_file" required accept=".csv">
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary" id="SubmitCSV">I'm ready for the next step</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function onFormSubmit() {
+        var btn = document.getElementById("SubmitCSV");
+        btn.textContent = "Working on it...";
+        btn.disabled = true;
+    }
+</script>
+{% endblock %}

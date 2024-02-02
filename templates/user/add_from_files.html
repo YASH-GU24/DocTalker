@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% load static %}
+
+<div class="container custom-file my-5 py-4">
+    <div class="text-center">
+        <h1 class="mb-4">Add your files</h1>
+    </div>
+
+    <form id="example-form1" action="{% url 'add_from_files' %}" method="post" enctype="multipart/form-data" class="p-3 mb-4" onsubmit="onFormSubmit();">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="customFile" class="d-block mb-2"><b>Step 1.</b> Drag and drop your files onto this page or browse to select files.</label>
+            <div class="custom-file">
+                <input type="file" class="custom-file-input" id="customFile" name="files" multiple onchange="displaySelectedFiles()">
+                <label class="custom-file-label" for="customFile">Choose file(s)</label>
+            </div>
+        </div>
+
+    <!-- New div to display selected file names -->
+    <div id="selectedFilesList"></div>
+
+    <script>
+        function displaySelectedFiles() {
+            const inputElement = document.getElementById("customFile");
+            const fileList = inputElement.files;
+            const selectedFilesList = document.getElementById("selectedFilesList");
+
+            selectedFilesList.innerHTML = "<p>Selected Files:</p><ul>";
+
+            for (let i = 0; i < fileList.length; i++) {
+                selectedFilesList.innerHTML += "<li>" + fileList[i].name + "</li>";
+            }
+
+            selectedFilesList.innerHTML += "</ul>";
+        }
+    </script>
+
+        <!-- New line of text -->
+        <br>
+        <p class="mb-3"><b>Step 2.</b> Give your new library of files a name. If you enter the name of a library you already have, the files will be added to that library. You can also set the length of the text segments the AI researcher uses, but we recommend sticking with the default value to begin with.</p>
+
+        {{form}}
+        <div class="text-center mt-4 mb-16">
+            <button type="submit" class="btn btn-primary btn-lg" id="SubmitFiles">Add these files</button>
+        </div>
+        <br>
+    </form>
+
+</div>
+
+<script>
+    function onFormSubmit() {
+        var btn = document.getElementById("SubmitFiles");
+        btn.textContent = "Working on it...";
+        btn.disabled = true;
+    }
+</script>
+
+{% endblock %}

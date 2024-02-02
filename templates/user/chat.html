@@ -1,0 +1,382 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!DOCTYPE html>
+<style>
+  body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    width: 80%;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h1 {
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.dropdown-container {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+
+.dropdown-container label {
+    margin-bottom: 5px;
+    font-size: 1.2em;
+    color: #333;
+}
+
+#myDropdown {
+    padding: 10px;
+    font-size: 1em;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+#export-button, #submit-button {
+    background-color: #008CBA;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 10px 0;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+#export-button:hover, #submit-button:hover {
+    background-color: #00688B;
+    color: white;
+}
+
+#message-list {
+    border: 1px solid #ccc;
+    padding: 20px;
+    height: 300px;
+    overflow-y: scroll;
+    margin-bottom: 10px;
+}
+
+#user-input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+}
+
+#error-message {
+    color: red;
+    margin-bottom: 10px;
+}
+
+</style>
+<html>
+<head>
+  <title>Chat with your documents</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+  
+</head>
+<body>
+  <div class="container">
+    <h1>Chat with your documents</h1>
+    <div class="dropdown-container">
+      <label for="myDropdown">Select your library:</label>
+      <select id="myDropdown">
+        <!-- Options will be populated dynamically using JavaScript -->
+      </select>
+    </div>
+    <button id="export-button">Export Chat</button>
+    <div id="message-list">
+      <!-- Messages will be populated dynamically using JavaScript -->
+    </div>
+    <textarea id="user-input" placeholder="Write your question here"></textarea>
+    <button id="submit-button">Send</button>
+    <div id="error-message"></div>
+  </div>
+
+  <script src="script.js"></script>
+  
+</body>
+</html>
+
+<script>
+    // Initialize state
+let state = {
+  query: '',
+  loading: false,
+  error: null,
+  namespace: '',
+  options: [],
+  messages: [
+    {
+      message: 'Hi, select a library above and ask me a question I could answer with it. What would you like to know?',
+      type: 'apiMessage',
+    },
+  ],
+  history: [],
+};  
+// Get DOM elements
+const messageList = document.getElementById('message-list');
+const userInput = document.getElementById('user-input');
+const dropdown = document.getElementById('myDropdown');
+const submitButton = document.getElementById('submit-button');
+const errorMessage = document.getElementById('error-message');
+const exportButton = document.getElementById('export-button');
+
+// Helper function to scroll to bottom of message list
+function scrollToBottom() {
+  messageList.scrollTop = messageList.scrollHeight;
+}
+updateMessageList();
+// Function to handle submit
+async function handleSubmit(e) {
+  e.preventDefault();
+  state.error = null;
+
+  const question = userInput.value.trim();
+
+  if (!question) {
+    alert('Please input a question');
+    return;
+  }
+
+  // Add user message to state
+  state.messages.push({
+    type: 'userMessage',
+    message: 'User: '+ question,
+  });
+
+  // Update message list
+  updateMessageList();
+
+  userInput.value = '';
+  state.loading = true;
+
+  try {
+    const formData = new FormData();
+    formData.append('question', question);
+    formData.append('history', JSON.stringify(state.history));
+    formData.append('namespace', state.namespace);
+    const response = await fetch('/user/chat/', {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await response.json();
+    console.log("data",data)
+    if (data.error) {
+      state.error = data.error;
+    } else {
+      state.messages.push({
+        type: 'apiMessage',
+        message: 'AI: ' + data.text,
+        sourceDocs: data.sourceDocuments,
+      });
+      state.history.push({"question":question,"response":data.text});
+    }
+
+    state.loading = false;
+    updateMessageList();
+    scrollToBottom();
+  } catch (error) {
+    state.loading = false;
+    state.error = 'An error occurred while fetching the data. Please try again.';
+    console.log('error', error);
+  }
+}
+
+// Fetch options on page load
+async function fetchOptions() {
+  try {
+    const response = await fetch('/user/namespaces', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    const data = await response.json();
+    state.options = data;
+    dropdown.innerHTML = state.options.map((option) => {
+      return `<option value="${option}">${option}</option>`;
+    }).join('');
+    state.namespace = state.options[0]
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+ // Function to update message list and accordion for sources
+ function updateMessageList() {
+  messageList.innerHTML = state.messages.map((message, index) => {
+    let sourceDocsHTML = '';
+    if (message.sourceDocs) {
+      sourceDocsHTML = message.sourceDocs.map((doc, docIndex) => {
+        return `
+          <div class="accordion">
+            <button class="accordion-button">Source ${docIndex + 1}</button>
+            <div class="accordion-content">
+              <p>${doc.page_content}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    return `
+      <div class="${message.type}">
+        <span class="icon"></span>
+        ${message.message}
+        ${sourceDocsHTML}
+      </div>
+    `;
+  }).join('');
+  setupAccordionButtons();
+}
+
+// Function for when accordion buttons are clicked
+function setupAccordionButtons() {
+  document.querySelectorAll('.accordion-button').forEach(button => {
+    button.addEventListener('click', () => {
+      // Toggle the "active" class on the button
+      button.classList.toggle("active");
+
+      // Toggle the "active" class on the content
+      const content = button.nextElementSibling;
+      content.classList.toggle("active");
+    });
+  });
+}
+
+// Add event listeners
+dropdown.addEventListener('change', function(e) {
+  state.namespace = e.target.value;
+});
+submitButton.addEventListener('click', handleSubmit);
+userInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && userInput.value) {
+    handleSubmit(e);
+  }
+});
+
+/*
+// Export button - connects to views.py and urls.py
+exportButton.addEventListener('click', async function() {
+  // Fetch the chat history from the server
+  const response = await fetch('/user/get_chat_history/');
+  const chatHistory = await response.json();
+  // Convert the chat history to a string
+  const chatHistoryStr = JSON.stringify(chatHistory, null, 2);
+  // Create a blob from the string
+  const blob = new Blob([chatHistoryStr], {type: 'text/plain'});
+  // Create a link and click it to start the download
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'chat_history.txt';
+  link.click();
+});
+*/
+
+// Export button - connects to views.py and urls.py
+exportButton.addEventListener('click', async function() {
+  // Fetch the chat history from the server
+  const response = await fetch('/user/get_chat_history/');
+  const chatHistory = await response.json();
+
+  // Custom JSON stringify to remove the quotation marks arounds keys and values but not within them
+  function customStringify(obj) {
+    let result = [];
+    for (const key in obj) {
+        let value = obj[key];
+        if (typeof value === 'object' && value !== null) {
+            value = customStringify(value);  // Recursively stringify nested objects
+        } else if (typeof value !== 'string') {
+            value = JSON.stringify(value);
+        }
+        result.push(`${key}: ${value}`);
+    }
+    return "{\n" + result.join(",\n") + "\n}";
+  }
+
+  // Custom formatting function to convert the chat history object to a string
+  function formatChatHistory(history) {
+    let formatted = '';
+    for (const entry of history) {
+        formatted += `Question: ${entry.question}\n\n`;
+        formatted += `Response: ${entry.response}\n\n`;
+        if (entry.sourceDocuments && entry.sourceDocuments.length > 0) {
+            formatted += 'Source Documents:\n';
+            let sourceNumber = 1;  // Initialize the source number
+            for (const doc of entry.sourceDocuments) {
+                // Convert the document object using the custom stringify function
+                let docString = customStringify(doc);
+                // Remove the curly brackets at the start and end
+                docString = docString.slice(1, -1).trim();
+                formatted += `SOURCE ${sourceNumber}:\n${docString}\n`;  // Use the source number and increment it
+                sourceNumber++;  // Increment the source number for the next iteration
+            }
+            formatted += '==========\n';  // Add the separator after the last source document
+        }
+        // Add a newline to separate entries, but not after the last entry
+        if (history.indexOf(entry) !== history.length - 1) {
+            formatted += '\n';
+        }
+    }
+    return formatted;
+  }
+
+  // Convert the chat history to a formatted string
+  const chatHistoryStr = formatChatHistory(chatHistory);
+  // Create a blob from the string
+  const blob = new Blob([chatHistoryStr], { type: 'text/plain' });
+  // Create a link and click it to start the download
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'chat_history.txt';
+  link.click();
+});
+
+
+// Fetch options on page load
+fetchOptions();
+
+
+// Trigger a reset of chat_global_history when the page is refreshed or user leaves
+window.onbeforeunload = function() {
+    resetChatHistory();
+}
+
+function resetChatHistory() {
+    // const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch('/user/reset_chat_history/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            // 'X-CSRFToken': csrftoken  
+            // At some point, I will need to add the csrftoken and resolve the issues that creates
+        },
+        async: false  // This ensures the request is completed before the page unloads
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status !== 'success') {
+            console.error('Error resetting chat history.');
+        }
+    });
+}
+
+
+</script>
+
+{% endblock %}

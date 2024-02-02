@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<body>
+    <!-- CSS for Bootstrap 5 -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+
+    <div class="container py-5">
+        <ul class="list-group">
+            <li class="list-group-item">
+                <a href="{% url 'get_answer' %}" class="h2 text-decoration-none">Chat with your documents</a>
+            </li>
+            <li class="list-group-item">
+                <a href="{% url 'add_from_files' %}" class="h2 text-decoration-none">Add your files</a>
+            </li>
+            <li class="list-group-item">
+                <a href="{% url 'upload_from_csv' %}" class="h2 text-decoration-none">Add content via a table</a>
+            </li>            
+            <li class="list-group-item">
+                <a href="{% url 'library_manager' %}" class="h2 text-decoration-none">Manage your libraries</a>
+            </li>
+        </ul>
+    </div>
+    <!-- JS for Bootstrap 5 -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+</body>
+
+{% endblock %}
