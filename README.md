@@ -14,9 +14,6 @@ git clone [github https url]
 pip install -r requirements.txt
 ```
 
-
-After installation, you should now see a `node_modules` folder.
-
 3. Set up your `.env` file
 
 - Copy `.env.example` into `.env`
@@ -27,6 +24,11 @@ OPENAI_API_KEY=
 PINECONE_API_KEY=
 PINECONE_ENVIRONMENT=
 PINECONE_INDEX_NAME=
+```
+2. Run Application
+
+```
+python manage.py runserver
 ```
 ## Features
 
